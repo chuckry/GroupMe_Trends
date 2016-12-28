@@ -1,1 +1,1 @@
-# GroupMe_Trends
+# GroupMe Trends

@@ -93,30 +93,40 @@ class GroupMe:
 
 		membersToLikes = {}
 		membersToMsgs = {}
+		idToName = {}
 		for msg in self.mMessages:
 			# TODO: "GroupMe" messages should translate to a user
 			if msg['name'] == "GroupMe":
 				continue
 
-			if msg['name'] not in membersToLikes:
-				membersToLikes[msg['name']] = 0
-			membersToLikes[msg['name']] += len(msg['favorited_by'])
+			# Fixes sender names as their most recent nickname
+			sender = msg['sender_id']
+			if sender not in idToName:
+				idToName[sender] = msg['name']
 
-			if msg['name'] not in membersToMsgs:
-				membersToMsgs[msg['name']] = 0
-			membersToMsgs[msg['name']] += 1
+			# Updates likes / messages dictionary
+			if sender not in membersToLikes:
+				membersToLikes[sender] = 0
+			membersToLikes[sender] += len(msg['favorited_by'])
+
+			if sender not in membersToMsgs:
+				membersToMsgs[sender] = 0
+			membersToMsgs[sender] += 1
 
 		memberRatios = {}
 		for member in membersToLikes:
-			memberRatios[member] = membersToLikes[member] / float(membersToMsgs[member])
-		return sorted(memberRatios.items(), key=operator.itemgetter(1), reverse=True)
+			memberRatios[idToName[member]] = membersToLikes[member] / float(membersToMsgs[member])
 
+		maxRatio = max(memberRatios.iteritems(), key=operator.itemgetter(1))[1]
+		for member in memberRatios:
+			memberRatios[member] /= float(maxRatio)
+		return sorted(memberRatios.items(), key=operator.itemgetter(1), reverse=True)
 
 g = GroupMe()
 # pprint.pprint(g.getGroupsToDelete())
 print "***** GROUPME POPULARITY SCORES FOR " + groupName + " *****"
 pprint.pprint(g.mostPopularMember(groupName))
-print "***** (Number of Earned Likes) / (Total Number of Messages) per member. *****"
+print "***** (Total Likes Earned) / (Total # of Messages) per member, normalized by max score. *****"
 
 
 
