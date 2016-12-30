@@ -82,7 +82,7 @@ class GroupMe:
 	# Return member with highest likes:messages
 	#	- number of messages must exceed threshold
 	#	- threshold based on (total group messages) / (total group members)
-	def mostPopularMember(self, groupName):
+	def getMemberMessageInfo(self, groupName):
 		self.mMessages = []
 		msg_id = None
 		data = self.getMessages(groupName, msg_id)
@@ -93,6 +93,7 @@ class GroupMe:
 
 		membersToLikes = {}
 		membersToMsgs = {}
+		membersToTopMsg = {}
 		idToName = {}
 		for msg in self.mMessages:
 			# TODO: "GroupMe" messages should translate to a user
@@ -101,6 +102,8 @@ class GroupMe:
 
 			# Fixes sender names as their most recent nickname
 			sender = msg['sender_id']
+			numFaves = len(msg['favorited_by'])
+
 			if sender not in idToName:
 				idToName[sender] = msg['name']
 
@@ -109,9 +112,23 @@ class GroupMe:
 				membersToLikes[sender] = 0
 			membersToLikes[sender] += len(msg['favorited_by'])
 
+			if sender not in membersToTopMsg:
+				membersToTopMsg[sender] = [0, []]
+
+			if numFaves and msg['text'] and numFaves == membersToTopMsg[sender][0]:
+				membersToTopMsg[sender][1].append(msg['text'])
+				membersToTopMsg[sender][0] = numFaves
+
+			if numFaves > membersToTopMsg[sender][0]:
+				membersToTopMsg[sender][1] = [msg['text']]
+				membersToTopMsg[sender][0] = numFaves
+
 			if sender not in membersToMsgs:
 				membersToMsgs[sender] = 0
 			membersToMsgs[sender] += 1
+
+		for key in membersToMsgs:
+			membersToTopMsg[idToName[key]] = membersToTopMsg.pop(key)
 
 		memberRatios = {}
 		for member in membersToLikes:
@@ -120,12 +137,19 @@ class GroupMe:
 		maxRatio = max(memberRatios.iteritems(), key=operator.itemgetter(1))[1]
 		for member in memberRatios:
 			memberRatios[member] /= float(maxRatio)
-		return sorted(memberRatios.items(), key=operator.itemgetter(1), reverse=True)
+
+		memberMsgInfo = {}
+		for member in memberRatios:
+			memberMsgInfo[member] = {}
+			memberMsgInfo[member]['maxFavorites'] = membersToTopMsg[member][0]
+			memberMsgInfo[member]['topMessages'] = membersToTopMsg[member][1]
+			memberMsgInfo[member]['popularityScore'] = memberRatios[member]
+		return memberMsgInfo
 
 g = GroupMe()
 # pprint.pprint(g.getGroupsToDelete())
 print "***** GROUPME POPULARITY SCORES FOR " + groupName + " *****"
-pprint.pprint(g.mostPopularMember(groupName))
+pprint.pprint(g.getMemberMessageInfo(groupName))
 print "***** (Total Likes Earned) / (Total # of Messages) per member, normalized by max score. *****"
 
 
