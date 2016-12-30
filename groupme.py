@@ -140,10 +140,11 @@ class GroupMe:
 
 		memberMsgInfo = {}
 		for member in memberRatios:
-			memberMsgInfo[member] = {}
-			memberMsgInfo[member]['maxFavorites'] = membersToTopMsg[member][0]
-			memberMsgInfo[member]['topMessages'] = membersToTopMsg[member][1]
-			memberMsgInfo[member]['popularityScore'] = memberRatios[member]
+			memberMsgInfo[member] = {
+				'maxFavorites': membersToTopMsg[member][0],
+				'topMessages': membersToTopMsg[member][1],
+				'popularityScore': memberRatios[member]
+			}
 		return memberMsgInfo
 
 g = GroupMe()
